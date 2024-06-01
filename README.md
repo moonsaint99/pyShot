@@ -1,6 +1,8 @@
 <h1>pyShot</h1>
 
-Dependencies: pyShot uses
+<h2>pyShot is a blah blah blah </h2>
+
+Dependencies:
 * [NumPy](https://numpy.org/)
 * [SciPy](https://scipy.org/)
 * [matplotlib](https://matplotlib.org/)
