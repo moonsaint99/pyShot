@@ -1,6 +1,6 @@
 <h1>pyShot</h1>
 
-pyShot is a python package including tools for processing active source seismic shot records, including loading, picking, reflectivity analysis, and Wiechert-Herglotz inversion. The flagship tool in the pyShot toolbox is the GUI-based picker, which allows the user to use their mouse cursor to hover over seismic shot records and make amplitude picks that snap to peaks. The picker tool is built on matplotlib and ObsPy, making it easily extensible using existing functionalities of these two established python packages.
+pyShot is a python package including tools for processing active source seismic shot records, including loading, picking, reflectivity analysis, and Wiechert-Herglotz inversion. The flagship tool in the pyShot toolbox is the GUI-based picker, which allows the user to use their mouse cursor to hover over seismic shot records and make amplitude picks that snap to peaks. The picker tool is built on matplotlib and ObsPy, making it easily extensible using existing functionalities of these two established python packages. Picks are exported to CSV format, which allows them to be assimilated straightforwardly into any data analysis pipeline.
 
 Dependencies:
 * [NumPy](https://numpy.org/)
