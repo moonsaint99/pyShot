@@ -3,7 +3,7 @@ import numpy as np
 import copy
 import os
 
-class opPickfile:
+class psPickfile:
     def __init__(self, filename, depth=477):
         self.filename = filename
         # Import the csv, where each line is offset, time, amplitude, std
@@ -49,15 +49,15 @@ def assimilate_pickdata(directory_path):
     names.sort()
     for name in names:
         try:
-            primary_list.append(opPickfile(directory_path + '/primary_' + name + '.csv'))
+            primary_list.append(psPickfile(directory_path + '/primary_' + name + '.csv'))
         except:
             primary_list.append(None)
         try:
-            secondary_list.append(opPickfile(directory_path + '/secondary_' + name + '.csv'))
+            secondary_list.append(psPickfile(directory_path + '/secondary_' + name + '.csv'))
         except:
             secondary_list.append(None)
         try:
-            firn_list.append(opPickfile(directory_path + '/firn_' + name + '.csv'))
+            firn_list.append(psPickfile(directory_path + '/firn_' + name + '.csv'))
         except:
             firn_list.append(None)
     return names, primary_list, secondary_list, firn_list

@@ -1,15 +1,13 @@
-# This script lets you load SEGY files into ObsPy Stream objects.
-# Then it creates an interactive plot where you can use your cursor to pick peaks
+# This script lets you use an interactive plot where you can use your cursor to pick peaks
 # in the seismic signal, and the script will snap to the nearest peak/trough.
 # You don't have to pick every single trace, just the ones that look like they
 # have the arrival you need to pick.
 # It will save your picks to a csv file.
-# The csv file will include pick time, pick amplitude, trace offset, and trace number.
-# You can also load a csv file of picks you've already made, and the script will
-# plot those picks on top of the seismic signal.
+# The csv file will include pick time, pick amplitude, standard deviation in a window around your pick,
+# trace offset, and trace number.
 #
 
-from load_segy import loadshots
+#from ..load.load_segy import loadshots
 
 import matplotlib as mpl
 # mpl.use('macosx')
@@ -19,7 +17,7 @@ import numpy as np
 import scipy as sp
 import os
 
-# Load all .su files in the directory of choice into a dictionary of ObsPy Stream objects.
+# # Load all .su files in the directory of choice into a dictionary of ObsPy Stream objects.
 # lithic_smallstack_streams = loadshots("lithic_smallstack_streams/abs/")
 
 # Helper functions
@@ -39,12 +37,156 @@ def clip_stream(stream_original, clipval):
 # n and m to increase or decrease the gain.
 # You can click on a trace to pick the nearest peak or trough.
 
+class PickPlotParams:
+    """
+    A class for storing plotting parameters for the PickPlotter class.
+    """
+
+class PickPlotter:
+    """
+    A class for interactively picking seismic arrivals from a loaded stream object.
+
+    """
+
+    def __init__(self, stream_input, filename="Record Section", outfile="picks.csv"):
+        """
+        Initializes the PickPlotter class with stream data, filename, and output filename.
+
+        Args:
+            stream_input: The target obspy stream object.
+            filename: The name of the seismic record.
+            outfile: The filename for the output pick csv file.
+        """
+        # Stream object, both visual and original
+        self.stream_visual = stream_input.copy()
+        self.stream_original = stream_input.copy()
+        # Name and directory of output pick file
+        self.filename = filename
+        self.outfile_name = os.path.basename(outfile)
+        self.outfile_dir = os.path.dirname(outfile)
+
+        # Plotting parameters
+        self.data_delta = self.stream_original[0].stats.delta
+        self.scale = 1
+
+        # Clip value for traces
+        trace_maxvals = []
+        for trace in self.stream_visual:
+            trace_maxvals.append(np.max(np.abs(trace.data)))
+        maxamp = np.max(trace_maxvals)
+        self.clip = maxamp
+
+        # Peak information
+        self.peaks = []
+        self.peaktimes = []
+        for trace in self.stream_original:
+            peakindices = sp.signal.find_peaks(trace.data)[0]
+            troughindices = sp.signal.find_peaks(-trace.data)[0]
+            supremaindices = np.concatenate((peakindices, troughindices))
+            self.peaks.append(supremaindices)
+            suprematimes_array = trace.stats.delta * supremaindices
+            self.peaktimes.append(suprematimes_array.tolist())
+
+        self.pickdictPlot1 = None
+        self.pickdictPlot2 = None
+
+        #initial plotting --- all AI stuff below this
+
+        self.ax = plt.gca()
+        self.ax.set_title(self.filename)
+        self.ax.set_xlabel('Offset (km)')
+        self.ax.set_ylabel('Time (s)')
+        self.ax.set_ylim(np.require(self.stream_visual[0].stats.endtime, dtype='float32'), 0)
+
+    def load_data(self):
+        """
+        Precomputes peak information for all traces in the stream.
+        """
+        self.data_delta = self.stream[0].stats.delta
+        peaks = []
+        peaktimes = []
+        for trace in self.stream_original:
+            peakindices = sp.find_peaks(trace.data)[0]
+            troughindices = sp.find_peaks(-trace.data)[0]
+            supremaindices = np.concatenate((peakindices, troughindices))
+            peaks.append(supremaindices)
+            suprematimes_array = trace.stats.delta * supremaindices
+            peaktimes.append(suprematimes_array.tolist())
+        self.peaks = peaks
+        self.peaktimes = peaktimes
+
+    def plot_data(self):
+        """
+        Plots the seismic section data and initializes interactive elements.
+        """
+        self.fig, self.ax = plt.subplots(figsize=(12, 8))
+        self.stream.plot(
+            type="section",
+            scale=self.scale,
+            fig=self.fig,
+            time_down=True,
+            fillcolors=("blue", "red"),
+            color="black",
+            size=(600, 800),
+        )
+        self.ax.set_title(self.filename)
+        self.ax.set_xlabel("Offset (km)")
+        self.ax.set_ylabel("Time (s)")
+        self.ax.set_ylim(np.require(self.stream[0].stats.endtime, dtype="float32"), 0)
+
+        offsetlist = [trace.stats.distance / 1000 for trace in self.stream_original]
+        self.point, = self.ax.plot([], [], "_", markersize=25, color="green")
+        self.pickInfo = self.ax.text(
+            0.02,
+            0.02,
+            "",
+            transform=self.ax.transAxes,
+            verticalalignment="top",
+            bbox=dict(boxstyle="round", facecolor="wheat", alpha=1),
+        )
+
+        self.fig.canvas.mpl_connect("key_press_event", self.handle_key_press)
+        self.fig.canvas.mpl_connect("button_press_event", self.handle_mouse_click)
+        self.fig.canvas.mpl_connect("motion_notify_event", self.handle_mouse_move)
+
+    def handle_key_press(self, event):
+        """
+        Handles key presses for scaling, clipping, picking modes, etc.
+        """
+        # ... (Implement key press logic similar to the original Pick function)
+
+    def handle_mouse_click(self, event):
+        """
+        Handles mouse clicks for adding picks to dictionaries.
+        """
+        # ... (Implement mouse click logic similar to the original Pick function)
+
+    def handle_mouse_move(self, event):
+        """
+        Handles mouse movement for highlighting the nearest peak.
+        """
 def Pick(stream_input, filename="Record Section", outfile="picks.csv"):
-    global stream
+    """
+    Loads all .su files in a directory into a dictionary of ObsPy Stream objects.
+    :param stream_input: The target obspy stream object, composed of all the traces constituting the given shot record
+    :param filename: A string representing the name of the target shot record.
+    :param outfile: A string representing the filename of the output pick csv file.
+
+    Example usage:
+    Pick(ShotRecord, filename="Shot Record", outfile="shotrecord.csv"
+
+    This csv can be imported back into Python as a psPickfile object using pyshot.pick.psPickfile(), or a folder of these csvs may be assimilated into
+    a list of pickfile objects using pyshot.pick.assimilate_pickdata()
+    """
+
+    # We create global variables both for the stream as we currently are viewing it, and for the stream as it originally
+    # was in the data. The first variable 'stream' can be scaled and clipped
+    global stream_visual # previously "stream"
     global stream_original
     stream_original = stream_input.copy()
-    stream = stream_original.copy()
+    stream_visual = stream_original.copy()
 
+    # We also create global variables for the filename and directory of the output file
     global outfile_dir
     global outfile_name
     outfile_dir = os.path.dirname(outfile)
@@ -53,17 +195,17 @@ def Pick(stream_input, filename="Record Section", outfile="picks.csv"):
 
     # First we determine the initial axes of the plot based on the first trace in the Stream.
     # We will use this to determine the x and y limits of the plot.
-    mintrace = stream[
+    mintrace = stream_visual[
         0].stats.su.trace_header.distance_from_center_of_the_source_point_to_the_center_of_the_receiver_group
-    maxtrace = stream[
+    maxtrace = stream_visual[
         -1].stats.su.trace_header.distance_from_center_of_the_source_point_to_the_center_of_the_receiver_group
-    streamend = np.require(stream[0].stats.endtime, dtype='float32')
+    streamend = np.require(stream_visual[0].stats.endtime, dtype='float32')
     trace_maxvals = []
-    for trace in stream:
+    for trace in stream_visual:
         trace_maxvals.append(np.max(np.abs(trace.data)))
     maxamp = np.max(trace_maxvals)
     streamfig = plt.figure(figsize=(12, 8))
-    stream.plot(type='section', scale=1, fig=streamfig, time_down=True, fillcolors=('blue', 'red'), color='black',
+    stream_visual.plot(type='section', scale=1, fig=streamfig, time_down=True, fillcolors=('blue', 'red'), color='black',
                 size=(600, 800))
     ax = plt.gca()
     ax.set_title(filename)
@@ -72,7 +214,7 @@ def Pick(stream_input, filename="Record Section", outfile="picks.csv"):
     ax.set_ylim(streamend, 0)
 
     global data_delta
-    data_delta = stream[0].stats.delta
+    data_delta = stream_original[0].stats.delta
 
     global scale
     scale = 1
@@ -120,6 +262,11 @@ def Pick(stream_input, filename="Record Section", outfile="picks.csv"):
 
     # Find peak based on cursor coords
     def cursor_peakfinder(event):
+        """
+        This function finds the peak nearest to the cursor.
+        :param event: The cursor event
+        :return: The offset, time, amplitude, and standard deviation of the peak nearest to the cursor
+        """
         if not event.inaxes:
             return
 
@@ -148,6 +295,10 @@ def Pick(stream_input, filename="Record Section", outfile="picks.csv"):
     # Highlight nearest peak to the cursor
 
     def on_move(event):
+        """
+        This function determines what happens as a function of what the mouse is hovering over
+        :param event: The cursor event
+        """
         global pickInfo
         if not event.inaxes:
             return

@@ -5,6 +5,11 @@ import obspy as op
 def loadshots(directory_path):
     """
     Loads all .su files in a directory into a dictionary of ObsPy Stream objects.
+    :param directory_path: The path to the directory containing the .su files.
+    :return: A dictionary of ObsPy Stream objects, where the keys are the filenames.
+
+    Example usage:
+    seismic_streams = loadshots("./site1_shots/")
     """
     streamdict = {}  # Initialize an empty dictionary.
     # Loop over all files in the directory.
