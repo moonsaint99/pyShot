@@ -23,3 +23,5 @@
 /pyshot/build/
 /build/
 /pyshot.egg-info/
+/pyshot/pick/__pycache__/
+/pyshot/load/__pycache__/

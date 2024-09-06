@@ -13,7 +13,7 @@ model   Functions for modeling seismic data.
 """
 
 from . import load
-#from . import pick
+from . import pick
 #from . import cryo
 #from . import model
 
